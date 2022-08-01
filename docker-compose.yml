@@ -1,0 +1,62 @@
+version: '6'
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    ports:
+      - "3306:3306"
+      - "33060:33060"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=bootdb
+    networks:
+      - inatel
+
+  stock-manager:
+    image: adautomendes/stock-manager
+    container_name: stockmanager
+    ports:
+      - "8080:8080"
+    networks:
+      - inatel
+    depends_on:
+      - mysql
+    restart: on-failure
+
+  mysql-quotation-management:
+    image: mysql:8
+    container_name: mysql_quotationmanagement
+    ports:
+      - "3307:3306"
+      - "33070:33060"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=bootdb
+    networks:
+      - inatel
+
+  quotation-management:
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    image: ranierigeroldi/quotation-management
+    container_name: quotationmanagement
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - APP_PORT=8081
+      - MYSQL_CONTAINER=mysql_quotationmanagement
+      - STOCKMANAGER_CONTAINER=stockmanager
+      - REGISTRATION_HOST=quotationmanagement
+    networks:
+      - inatel
+    depends_on:
+      - stock-manager
+      - mysql-quotation-management
+    restart: on-failure
+
+networks:
+  inatel:
+    driver: bridge
